@@ -1,14 +1,8 @@
 FROM ubuntu:latest
 WORKDIR /tmp
 RUN apt-get update \ 
-    && apt-get -y install build-essential \
-    && apt-get -y install libpcre3\ 
-    && apt-get -y install libpcre3-dev \
-    && apt-get -y install libcurl4-openssl-dev\
-    && apt-get -y install libssl-dev\
-    && apt-get -y install zlib1g zlib1g-dev\
-    && apt-get -y install gcc \
-    && apt-get -y install wget
+    && apt-get -y install build-essential libpcre3 libpcre3-dev  libcurl4-openssl-dev\
+    libssl-dev zlib1g zlib1g-dev gcc wget
 
 RUN wget https://nginx.org/download/nginx-1.24.0.tar.gz \
     && tar -xf nginx-1.24.0.tar.gz \
@@ -21,15 +15,12 @@ RUN wget https://nginx.org/download/nginx-1.24.0.tar.gz \
         --error-log-path=/var/log/nginx/error.log \ 
         --http-log-path=/var/log/nginx/access.log\ 
 	--with-http_ssl_module\
-    &&  make && make install
+    && make && make install
 
 COPY nginx /etc/init.d/
 
 RUN chmod +x /etc/init.d/nginx
 
 VOLUME ~/docker_learn/nginx_test/extensions
-
-EXPOSE 80/tcp
-EXPOSE 80/udp
 
 CMD ["nginx", "-g", "daemon off;"]
