@@ -13,7 +13,7 @@ RUN apt-get update \
 RUN wget https://nginx.org/download/nginx-1.24.0.tar.gz \
     && tar -xf nginx-1.24.0.tar.gz \
     && cd nginx-1.24.0/ \
-    && echo "./configure \
+    && ./configure \
         --prefix=/usr/local/nginx \ 
         --sbin-path=/usr/sbin \
         --conf-path=/etc/nginx/nginx.conf \ 
@@ -21,9 +21,6 @@ RUN wget https://nginx.org/download/nginx-1.24.0.tar.gz \
         --error-log-path=/var/log/nginx/error.log \ 
         --http-log-path=/var/log/nginx/access.log\ 
 	--with-http_ssl_module\
-         " > conf.sh \
-    && chmod 777 conf.sh \
-    && ./conf.sh \ 
     &&  make && make install
 
 COPY nginx /etc/init.d/
@@ -32,7 +29,7 @@ RUN chmod +x /etc/init.d/nginx
 
 VOLUME ~/docker_learn/nginx_test/extensions
 
-EXPOSE 3080/tcp
-EXPOSE 3080/udp
+EXPOSE 80/tcp
+EXPOSE 80/udp
 
-CMD ["/usr/sbin/update-rc.d","-f","nginx","defaults"]
+CMD ["nginx", "-g", "daemon off;"]
