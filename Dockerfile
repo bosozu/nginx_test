@@ -21,6 +21,6 @@ COPY nginx /etc/init.d/
 
 RUN chmod +x /etc/init.d/nginx
 
-VOLUME ~/docker_learn/nginx_test/extensions
+VOLUME ./extensions
 
 CMD ["nginx", "-g", "daemon off;"]
