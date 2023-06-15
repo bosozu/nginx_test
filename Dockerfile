@@ -2,7 +2,7 @@ FROM ubuntu:latest
 WORKDIR /tmp
 RUN apt-get update \ 
     && apt-get -y install build-essential libpcre3 libpcre3-dev  libcurl4-openssl-dev\
-    libssl-dev zlib1g zlib1g-dev gcc wget
+    libssl-dev zlib1g zlib1g-dev gcc wget curl make perl
 
 RUN wget https://nginx.org/download/nginx-1.24.0.tar.gz \
     && tar -xf nginx-1.24.0.tar.gz \
@@ -16,6 +16,8 @@ RUN wget https://nginx.org/download/nginx-1.24.0.tar.gz \
         --http-log-path=/var/log/nginx/access.log\ 
 	--with-http_ssl_module\
     && make && make install
+
+RUN wget https://openresty.org/download/openresty-1.21.4.1.tar.gz
 
 COPY nginx /etc/init.d/
 
