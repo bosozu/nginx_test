@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:latest as base
 WORKDIR /tmp
 RUN apt-get update \ 
     && apt-get -y install build-essential libpcre3 libpcre3-dev  libcurl4-openssl-dev\
@@ -36,12 +36,23 @@ RUN cd nginx-1.24.0\
 	--with-http_ssl_module\
     && make && make install
 
+RUN sed -i '$i     lua_package_path "/opt/nginx/lib/lua/?.lua;;";' /etc/nginx/nginx.conf \
+    && sed -i '$i     include /data/sites-enabled/*;' /etc/nginx/nginx.conf
+
+
+FROM ubuntu:latest
+
+WORKDIR /
+
+COPY --from=base /usr/local/ /usr/local/
+COPY --from=base /usr/sbin/nginx /usr/sbin/
+COPY --from=base /etc/nginx/ /etc/nginx/
+COPY --from=base /var/log/nginx/ /var/log/nginx/
+COPY --from=base /opt/nginx /opt/nginx/
+
+
 COPY nginx /etc/init.d/
 
-RUN sed -i '$i lua_package_path "/opt/nginx/lib/lua/?.lua;;";' /etc/nginx/nginx.conf
-
 RUN chmod +x /etc/init.d/nginx
-
-VOLUME ./extensions
 
 CMD ["nginx", "-g", "daemon off;"]
