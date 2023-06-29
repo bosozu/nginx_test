@@ -36,9 +36,9 @@ RUN cd nginx-1.24.0\
 	--with-http_ssl_module\
     && make && make install
 
-<<<<<<< HEAD
+
 RUN wget https://openresty.org/download/openresty-1.21.4.1.tar.gz
-=======
+
 RUN sed -i '$i     lua_package_path "/opt/nginx/lib/lua/?.lua;;";' /etc/nginx/nginx.conf \
     && sed -i '$i     include /data/sites-enabled/*;' /etc/nginx/nginx.conf
 
@@ -54,8 +54,6 @@ COPY --from=base /usr/sbin/nginx /bin/sh/nginx
 COPY --from=base /etc/nginx/ /etc/nginx/
 COPY --from=base /var/log/nginx/ /var/log/nginx/
 COPY --from=base /opt/nginx /opt/nginx/
-
->>>>>>> add_lua
 
 COPY nginx /etc/init.d/
 
