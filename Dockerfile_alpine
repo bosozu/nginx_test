@@ -1,0 +1,71 @@
+FROM alpine:3.18.2 as base
+
+ENV NGINX_VERSION nginx-1.24.0
+ENV LUA_VERSION v2.1-20230410
+ENV NGX_DEVEL_KIT v0.3.2
+ENV LUA_NGINX_VERSION v0.10.24
+ENV LUA_RESTY_CORE_V v0.1.26
+ENV LUA_RESTY_LRUCACHE_V v0.13
+
+WORKDIR /tmp
+
+RUN apk --update add build-base openssl-dev zlib-dev gcc make g++ pcre-dev linux-headers wget
+
+RUN mkdir -p /tmp/src \
+    && cd /tmp/src/ \
+    && wget https://nginx.org/download/${NGINX_VERSION}.tar.gz && tar -zvxf ${NGINX_VERSION}.tar.gz\ 
+    && wget https://github.com/openresty/luajit2/archive/refs/tags/${LUA_VERSION}.tar.gz && tar -xzvf ${LUA_VERSION}.tar.gz\
+    && wget https://github.com/vision5/ngx_devel_kit/archive/refs/tags/${NGX_DEVEL_KIT}.tar.gz && tar -xzvf ${NGX_DEVEL_KIT}.tar.gz\ 
+    && wget https://github.com/openresty/lua-nginx-module/archive/refs/tags/${LUA_NGINX_VERSION}.tar.gz && tar -xzvf ${LUA_NGINX_VERSION}.tar.gz \ 
+    && wget https://github.com/openresty/lua-resty-core/archive/refs/tags/${LUA_RESTY_CORE_V}.tar.gz && tar -xzvf ${LUA_RESTY_CORE_V}.tar.gz\ 
+    && wget https://github.com/openresty/lua-resty-lrucache/archive/refs/tags/${LUA_RESTY_LRUCACHE_V}.tar.gz && tar -xzvf ${LUA_RESTY_LRUCACHE_V}.tar.gz 
+
+RUN cd ./src/luajit2-2.1-20230410/ && make && make install
+
+ENV LUAJIT_LIB=/usr/local/lib/
+ENV LUAJIT_INC=/usr/local/include/luajit-2.1/
+
+RUN cd /tmp/src/lua-resty-core-0.1.26 && make install PREFIX=/opt/nginx \
+    && cd /tmp/src/lua-resty-lrucache-0.13 && make install PREFIX=/opt/nginx
+
+RUN cd ./src/${NGINX_VERSION}\ 
+    && ./configure \
+        --prefix=/usr/local/nginx \
+        --sbin-path=/usr/sbin \
+        --conf-path=/etc/nginx/nginx.conf \ 
+        --pid-path=/var/run/nginx.pid \
+        --error-log-path=/var/log/nginx/error.log \ 
+        --http-log-path=/var/log/nginx/access.log\
+        --with-http_gzip_static_module \
+        --with-ld-opt="-Wl,-rpath,$LUAJIT_LIB" \
+	    --add-module=/tmp/src/lua-nginx-module-0.10.24/ \
+	    --add-module=/tmp/src/ngx_devel_kit-0.3.2/ \
+	    --with-http_ssl_module\
+    && make && make install
+    
+
+  #lua_package_path "/opt/nginx/lib/lua/?.lua;;";' 
+RUN sed -i '$i     lua_package_path "/opt/nginx/lib/lua/v2.1-20230410/?.lua;;";' /etc/nginx/nginx.conf \      
+    && sed -i '$i     include /data/sites-enabled/*;' /etc/nginx/nginx.conf
+
+RUN apk del build-base && rm -rf /tmp/src && rm -rf /var/cache/apk/*
+
+FROM alpine:3.18.2
+
+WORKDIR /
+
+
+COPY --from=base /usr/local/nginx /usr/local/nginx
+COPY --from=base /usr/sbin/nginx /usr/sbin/nginx
+COPY --from=base /etc/nginx/ /etc/nginx/
+COPY --from=base /var/log/nginx/ /var/log/nginx/
+COPY --from=base /opt/nginx /opt/nginx/
+COPY --from=base /usr/lib/libpcre.so.1 /usr/lib/
+COPY --from=base /usr/lib/libgcc_s.so.1 /usr/lib/
+COPY --from=base /usr/local/lib /usr/local/lib
+COPY nginx /etc/init.d/
+
+RUN chmod +x /etc/init.d/nginx
+
+
+CMD ["nginx", "-g", "daemon off;"]
