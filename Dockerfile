@@ -44,8 +44,10 @@ FROM ubuntu:latest
 
 WORKDIR /
 
-COPY --from=base /usr/local/ /usr/local/
-COPY --from=base /usr/sbin/nginx /usr/sbin/
+COPY --from=base /usr/local/nginx /usr/local/nginx
+COPY --from=base /usr/local/lib /usr/local/lib
+COPY --from=base /usr/local/include /usr/local/include
+COPY --from=base /usr/sbin/nginx /bin/sh/nginx
 COPY --from=base /etc/nginx/ /etc/nginx/
 COPY --from=base /var/log/nginx/ /var/log/nginx/
 COPY --from=base /opt/nginx /opt/nginx/
